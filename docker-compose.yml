@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # Primary PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: marketplace-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: digital_marketplace
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d digital_marketplace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Message Queue
+  redis:
+    image: redis:7-alpine
+    container_name: marketplace-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Fullstack Marketplace App
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketplace-web
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/digital_marketplace?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      MASTER_ENCRYPTION_KEY_V1: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      CURRENT_KEY_VERSION: "1"
+      PAYSTACK_SECRET_KEY: "sk_test_paystack_secret_12345"
+      CRYPTO_WEBHOOK_SECRET: "crypto_processor_secret_67890"
+      NODE_ENV: "production"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  redis_data:

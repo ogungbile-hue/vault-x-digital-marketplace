@@ -1,0 +1,14 @@
+{
+  "name": "@app/payments",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@app/types": "*",
+    "@app/database": "*",
+    "@app/ledger": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

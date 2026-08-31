@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AccountCategory {
+  ASSET
+  LIABILITY
+  REVENUE
+  EXPENSE
+}
+
+enum LedgerTransactionType {
+  DEPOSIT
+  ORDER_PAYMENT
+  REFUND
+  PLATFORM_FEE
+  ADMIN_ADJUSTMENT
+  DISPUTE_HOLD
+}
+
+enum EntryDirection {
+  DEBIT
+  CREDIT
+}
+
+enum StockStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  DEFECTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  FAILED
+}
+
+enum WebhookProvider {
+  PAYSTACK
+  CRYPTO_GENERIC
+  COINBASE
+  NOWPAYMENTS
+}
+
+enum WebhookStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  DUPLICATE
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  name            String?
+  role            UserRole         @default(USER)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  wallet          Wallet?
+  orders          Order[]
+  accessLogs      StockAccessLog[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id              String           @id @default(uuid())
+  userId          String           @unique @map("user_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance         BigInt           @default(0)
+  currency        String           @default("USD") @db.VarChar(3)
+  version         Int              @default(1)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@map("wallets")
+}
+
+model LedgerTransaction {
+  id              String                @id @default(uuid())
+  referenceId     String                @map("reference_id")
+  type            LedgerTransactionType
+  description     String
+  idempotencyKey  String                @unique @map("idempotency_key")
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  entries         LedgerEntry[]
+
+  @@index([referenceId])
+  @@index([type])
+  @@map("ledger_transactions")
+}
+
+model LedgerEntry {
+  id              String            @id @default(uuid())
+  transactionId   String            @map("transaction_id")
+  transaction     LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountId       String            @map("account_id")
+  accountCategory AccountCategory   @map("account_category")
+  direction       EntryDirection
+  amount          BigInt
+  currency        String            @default("USD") @db.VarChar(3)
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  @@index([accountId])
+  @@index([transactionId])
+  @@map("ledger_entries")
+}
+
+model Category {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  icon            String?
+  badges          String[]         @default([])
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  products        Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id              String           @id @default(uuid())
+  categoryId      String?          @map("category_id")
+  category        Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  title           String
+  slug            String           @unique
+  description     String?
+  price           BigInt
+  currency        String           @default("USD") @db.VarChar(3)
+  status          ProductStatus    @default(ACTIVE)
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  stockItems      StockItem[]
+  orderItems      OrderItem[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model StockItem {
+  id                String           @id @default(uuid())
+  productId         String           @map("product_id")
+  product           Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  status            StockStatus      @default(AVAILABLE)
+  payloadCiphertext String           @map("payload_ciphertext") @db.Text
+  iv                String           @db.VarChar(64)
+  tag               String           @db.VarChar(64)
+  keyVersion        Int              @default(1) @map("key_version")
+  version           Int              @default(1)
+  orderId           String?          @map("order_id")
+  lockedAt          DateTime?        @map("locked_at")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  orderItem         OrderItem?
+  accessLogs        StockAccessLog[]
+
+  @@index([productId, status])
+  @@map("stock_items")
+}
+
+model Order {
+  id              String           @id @default(uuid())
+  userId          String           @map("user_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  totalAmount     BigInt           @map("total_amount")
+  currency        String           @default("USD") @db.VarChar(3)
+  status          OrderStatus      @default(PENDING)
+  idempotencyKey  String           @unique @map("idempotency_key")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  items           OrderItem[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String           @id @default(uuid())
+  orderId         String           @map("order_id")
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String           @map("product_id")
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockItemId     String           @unique @map("stock_item_id")
+  stockItem       StockItem        @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
+  price           BigInt
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model StockAccessLog {
+  id              String           @id @default(uuid())
+  stockItemId     String           @map("stock_item_id")
+  stockItem       StockItem        @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  userId          String           @map("user_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress       String           @map("ip_address") @db.VarChar(45)
+  userAgent       String           @map("user_agent") @db.Text
+  revealedAt      DateTime         @default(now()) @map("revealed_at")
+
+  @@index([stockItemId])
+  @@index([userId])
+  @@map("stock_access_logs")
+}
+
+model IdempotencyRecord {
+  id              String           @id @default(uuid())
+  key             String           @unique
+  action          String
+  responsePayload String?          @map("response_payload") @db.Text
+  lockedUntil     DateTime?        @map("locked_until")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  @@map("idempotency_records")
+}
+
+model WebhookEvent {
+  id              String           @id @default(uuid())
+  provider        WebhookProvider
+  externalEventId String           @map("external_event_id")
+  signature       String?
+  payloadJson     String           @map("payload_json") @db.Text
+  status          WebhookStatus    @default(PENDING)
+  errorMessage    String?          @map("error_message")
+  processedAt     DateTime?        @map("processed_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@unique([provider, externalEventId])
+  @@index([status])
+  @@map("webhook_events")
+}

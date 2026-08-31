@@ -1,0 +1,28 @@
+{
+  "name": "digital-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "High-concurrency digital goods marketplace with double-entry ledger and encrypted inventory vault",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "npm run --workspace=@app/database generate",
+    "db:migrate": "npm run --workspace=@app/database migrate",
+    "db:seed": "npm run --workspace=@app/database seed"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "dotenv": "^16.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "zod": "^3.23.8"
+  }
+}

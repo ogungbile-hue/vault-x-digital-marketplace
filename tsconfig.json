@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@app/types": ["packages/types/src"],
+      "@app/crypto": ["packages/crypto/src"],
+      "@app/database": ["packages/database/src"],
+      "@app/ledger": ["packages/ledger/src"],
+      "@app/inventory": ["packages/inventory/src"],
+      "@app/payments": ["packages/payments/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next"]
+}
