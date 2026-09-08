@@ -238,16 +238,3 @@ export async function seedDatabase() {
 
   console.log('Database seeding complete! All stock encrypted with AES-256-GCM.');
 }
-
-// Auto-run if executed directly
-if (process.argv[1] && process.argv[1].endsWith('seed.ts')) {
-  seedDatabase()
-    .then(() => {
-      console.log('Seed finished successfully.');
-      process.exit(0);
-    })
-    .catch((err) => {
-      console.error('Seed error:', err);
-      process.exit(1);
-    });
-}
