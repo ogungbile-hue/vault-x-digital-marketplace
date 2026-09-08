@@ -1,4 +1,5 @@
-import { seedDatabase } from '../src/seed.js';
+import 'dotenv/config';
+import { seedDatabase } from '../src/seed';
 
 seedDatabase()
   .then(() => {

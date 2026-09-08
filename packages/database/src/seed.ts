@@ -1,5 +1,6 @@
+import 'dotenv/config';
 import crypto from 'node:crypto';
-import { prisma } from './client.js';
+import { prisma } from './client';
 import { encryptPayload, defaultKeyVault } from '@app/crypto';
 import { LedgerService } from '@app/ledger';
 import { ProductStatus, StockStatus } from '@app/types';

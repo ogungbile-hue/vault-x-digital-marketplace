@@ -15,8 +15,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "npm run --workspace=@app/database generate",
+    "db:push": "npm run --workspace=@app/database push",
     "db:migrate": "npm run --workspace=@app/database migrate",
-    "db:seed": "npm run --workspace=@app/database seed"
+    "db:seed": "npm run --workspace=@app/database seed",
+    "db:studio": "npm run --workspace=@app/database studio"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
