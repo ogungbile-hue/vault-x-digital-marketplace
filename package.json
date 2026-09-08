@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "npm run db:generate && npm run build --workspace=web",
+    "start": "npm run start --workspace=web",
     "postinstall": "npm run db:generate",
     "dev": "npm run dev --workspace=web",
     "lint": "turbo run lint",

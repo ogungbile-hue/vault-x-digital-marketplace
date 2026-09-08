@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vault-x-marketplace
+    runtime: node
+    plan: free
+    region: ohio
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: MASTER_ENCRYPTION_KEY_V1
+        sync: false
+      - key: CURRENT_KEY_VERSION
+        value: "1"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
